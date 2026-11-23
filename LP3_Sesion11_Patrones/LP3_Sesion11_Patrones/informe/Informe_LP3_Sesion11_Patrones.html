@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>LP3 - Sesión N° 11 - Patrones de Diseño</title>
+<style>
+body{font-family:Arial,Helvetica,sans-serif;color:#222;max-width:860px;margin:0 auto;padding:24px;background:#fff;line-height:1.45}
+header{text-align:center;border-bottom:3px solid #1f3a8a;padding-bottom:8px}
+header h1{font-size:18px;margin:2px;color:#1f3a8a} header h2{font-size:14px;margin:2px}
+h3.t{color:#1f3a8a;font-size:18px;border-bottom:3px solid #c9a227;padding-bottom:4px;margin-top:0}
+.blk{border:1px solid #ddd;border-radius:6px;padding:16px;margin:22px 0}
+table.i{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+table.i th{background:#1f3a8a;color:#fff;padding:6px;border:1px solid #1f3a8a;text-align:left}
+table.i td{border:1px solid #999;padding:6px}
+pre{background:#f5f5f5;border:1px solid #ccc;padding:10px;font-size:12px;overflow-x:auto;line-height:1.35}
+pre.out{background:#1e1e1e;color:#e6e6e6;border-color:#333}
+footer{border-top:1px solid #999;margin-top:30px;padding-top:6px;font-size:12px;text-align:center;color:#555}
+</style></head><body>
+<header><h1>UNIVERSIDAD CATÓLICA DE SANTA MARÍA</h1><h2>ESCUELA PROFESIONAL DE INGENIERÍA DE SISTEMAS</h2>
+<h2>LENGUAJES DE PROGRAMACIÓN III</h2><h2>SESIÓN N° 11: Patrones de Diseño – Observer, Strategy y Command</h2></header>
+<table class="i"><tr><th>CÓDIGO / DNI</th><th>APELLIDOS Y NOMBRES</th><th>FECHA</th></tr>
+<tr><td>&nbsp;</td><td>Stephano</td><td>&nbsp;</td></tr><tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr></table>
+<div class="blk">
+<h3 class="t">EJERCICIO 1: Sistema de notificaciones (Observer)</h3>
+<p><b>Enunciado:</b> usuarios registrados reciben notificaciones de promociones o actualizaciones de productos; pueden suscribirse y desuscribirse dinámicamente.</p>
+<table class="i"><tr><th>Rol del patrón</th><th>Clase / interfaz</th></tr><tr><td>Observer</td><td><code>Observador</code> (método <code>actualizar</code>)</td></tr><tr><td>Observer concreto</td><td><code>Usuario</code></td></tr><tr><td>Subject</td><td><code>CentroNotificaciones</code> (<code>suscribir</code>, <code>desuscribir</code>, <code>publicar</code>)</td></tr><tr><td>Dato del evento</td><td><code>Notificacion</code></td></tr></table>
+<p><b>Código</b> (<code>src/ej1_observer/Main.java</code>):</p>
+<pre>package ej1_observer;
+
+import java.util.ArrayList;
+import java.util.List;
+
+interface Observador { void actualizar(Notificacion n); }
+
+class Notificacion {
+    private final String tipo, mensaje;
+    Notificacion(String tipo, String mensaje) { this.tipo = tipo; this.mensaje = mensaje; }
+    String getTipo() { return tipo; }
+    String getMensaje() { return mensaje; }
+}
+
+class Usuario implements Observador {
+    private final String nombre;
+    Usuario(String nombre) { this.nombre = nombre; }
+    String getNombre() { return nombre; }
+    public void actualizar(Notificacion n) {
+        System.out.println(&quot;   -&gt; &quot; + nombre + &quot; recibio [&quot; + n.getTipo() + &quot;]: &quot; + n.getMensaje());
+    }
+}
+
+// Subject: el centro de notificaciones mantiene la lista de suscriptores
+class CentroNotificaciones {
+    private final List&lt;Observador&gt; suscriptores = new ArrayList&lt;&gt;();
+    void suscribir(Observador o) { if (!suscriptores.contains(o)) suscriptores.add(o); }
+    void desuscribir(Observador o) { suscriptores.remove(o); }
+    void publicar(Notificacion n) {
+        System.out.println(&quot;Publicando &quot; + n.getTipo() + &quot; a &quot; + suscriptores.size() + &quot; suscriptor(es)&quot;);
+        for (Observador o : suscriptores) o.actualizar(n);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        CentroNotificaciones centro = new CentroNotificaciones();
+        Usuario ana = new Usuario(&quot;Ana&quot;), luis = new Usuario(&quot;Luis&quot;), rosa = new Usuario(&quot;Rosa&quot;);
+        centro.suscribir(ana); centro.suscribir(luis); centro.suscribir(rosa);
+        centro.publicar(new Notificacion(&quot;PROMOCION&quot;, &quot;2x1 en laptops este fin de semana&quot;));
+
+        System.out.println(&quot;\nLuis se desuscribe&quot;);
+        centro.desuscribir(luis);
+        centro.publicar(new Notificacion(&quot;ACTUALIZACION&quot;, &quot;Nuevo stock de teclados mecanicos&quot;));
+
+        System.out.println(&quot;\nLuis vuelve a suscribirse&quot;);
+        centro.suscribir(luis);
+        centro.publicar(new Notificacion(&quot;PROMOCION&quot;, &quot;20% de descuento en accesorios&quot;));
+    }
+}</pre>
+<p><b>Salida del programa:</b></p>
+<pre class="out">Publicando PROMOCION a 3 suscriptor(es)
+   -&gt; Ana recibio [PROMOCION]: 2x1 en laptops este fin de semana
+   -&gt; Luis recibio [PROMOCION]: 2x1 en laptops este fin de semana
+   -&gt; Rosa recibio [PROMOCION]: 2x1 en laptops este fin de semana
+
+Luis se desuscribe
+Publicando ACTUALIZACION a 2 suscriptor(es)
+   -&gt; Ana recibio [ACTUALIZACION]: Nuevo stock de teclados mecanicos
+   -&gt; Rosa recibio [ACTUALIZACION]: Nuevo stock de teclados mecanicos
+
+Luis vuelve a suscribirse
+Publicando PROMOCION a 3 suscriptor(es)
+   -&gt; Ana recibio [PROMOCION]: 20% de descuento en accesorios
+   -&gt; Rosa recibio [PROMOCION]: 20% de descuento en accesorios
+   -&gt; Luis recibio [PROMOCION]: 20% de descuento en accesorios</pre>
+<p><b>Explicación:</b> el centro guarda una lista de <code>Observador</code>. Al llamar <code>publicar</code> recorre la lista y envía la notificación a cada suscriptor. Luis se desuscribe y deja de recibir avisos; al volver a suscribirse los recibe de nuevo, sin modificar el centro ni los demás usuarios.</p>
+</div><div class="blk">
+<h3 class="t">EJERCICIO 2: Estrategias de descuento (Strategy)</h3>
+<p><b>Enunciado:</b> calcular el precio final de un carrito con cuatro estrategias (SinDescuento, DescuentoFijo 10%, DescuentoPorcentual 30% con 2 productos iguales, DescuentoPorcentualAcumulado 50% al más barato desde 3 productos), elegidas desde un menú interactivo.</p>
+<table class="i"><tr><th>Rol del patrón</th><th>Clase / interfaz</th></tr><tr><td>Strategy</td><td><code>EstrategiaDescuento</code></td></tr><tr><td>Estrategias concretas</td><td><code>SinDescuento</code>, <code>DescuentoFijo</code>, <code>DescuentoPorcentual</code>, <code>DescuentoPorcentualAcumulado</code></td></tr><tr><td>Contexto</td><td><code>CalculadoraDePrecios</code> (<code>setEstrategia</code>, <code>calcularTotal</code>)</td></tr><tr><td>Modelo</td><td><code>Producto</code></td></tr></table>
+<p><b>Código</b> (<code>src/ej2_strategy/Main.java</code>):</p>
+<pre>package ej2_strategy;
+
+import java.util.*;
+
+class Producto {
+    private final String nombre; private final double precio;
+    Producto(String nombre, double precio) { this.nombre = nombre; this.precio = precio; }
+    String getNombre() { return nombre; }
+    double getPrecio() { return precio; }
+    public String toString() { return nombre + &quot; - S/ &quot; + precio; }
+}
+
+// Strategy
+interface EstrategiaDescuento {
+    double calcular(List&lt;Producto&gt; carrito);
+    String nombre();
+}
+
+class SinDescuento implements EstrategiaDescuento {
+    public double calcular(List&lt;Producto&gt; c) { return CalculadoraDePrecios.suma(c); }
+    public String nombre() { return &quot;Sin descuento&quot;; }
+}
+
+class DescuentoFijo implements EstrategiaDescuento {   // 10% sobre el total
+    public double calcular(List&lt;Producto&gt; c) { return CalculadoraDePrecios.suma(c) * 0.90; }
+    public String nombre() { return &quot;Descuento fijo (10%)&quot;; }
+}
+
+class DescuentoPorcentual implements EstrategiaDescuento {   // 30% a productos repetidos (2 o mas iguales)
+    public double calcular(List&lt;Producto&gt; c) {
+        Map&lt;String, Integer&gt; cant = new HashMap&lt;&gt;();
+        for (Producto p : c) cant.merge(p.getNombre(), 1, Integer::sum);
+        double total = 0;
+        for (Producto p : c) total += cant.get(p.getNombre()) &gt;= 2 ? p.getPrecio() * 0.70 : p.getPrecio();
+        return total;
+    }
+    public String nombre() { return &quot;Descuento porcentual (30% en 2 productos iguales)&quot;; }
+}
+
+class DescuentoPorcentualAcumulado implements EstrategiaDescuento {   // 3 o mas: 50% al mas barato
+    public double calcular(List&lt;Producto&gt; c) {
+        double total = CalculadoraDePrecios.suma(c);
+        if (c.size() &gt;= 3) {
+            double min = c.stream().mapToDouble(Producto::getPrecio).min().getAsDouble();
+            total -= min * 0.50;
+        }
+        return total;
+    }
+    public String nombre() { return &quot;Descuento acumulado (3+ productos: 50% al mas barato)&quot;; }
+}
+
+// Contexto
+class CalculadoraDePrecios {
+    private EstrategiaDescuento estrategia = new SinDescuento();
+    void setEstrategia(EstrategiaDescuento e) { this.estrategia = e; }
+    double calcularTotal(List&lt;Producto&gt; carrito) { return estrategia.calcular(carrito); }
+    static double suma(List&lt;Producto&gt; c) { return c.stream().mapToDouble(Producto::getPrecio).sum(); }
+}
+
+public class Main {
+    static int leerInt(Scanner sc) {
+        if (!sc.hasNextLine()) return 0;
+        try { return Integer.parseInt(sc.nextLine().trim()); } catch (NumberFormatException e) { return -1; }
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        List&lt;Producto&gt; carrito = new ArrayList&lt;&gt;(List.of(new Producto(&quot;Mouse&quot;, 50), new Producto(&quot;Mouse&quot;, 50),
+                new Producto(&quot;Teclado&quot;, 120), new Producto(&quot;Audifonos&quot;, 80)));
+        EstrategiaDescuento[] estrategias = { new SinDescuento(), new DescuentoFijo(),
+                new DescuentoPorcentual(), new DescuentoPorcentualAcumulado() };
+        CalculadoraDePrecios calc = new CalculadoraDePrecios();
+        int op;
+        do {
+            System.out.println(&quot;\n===== MENU DE DESCUENTOS =====&quot;);
+            for (int i = 0; i &lt; estrategias.length; i++) System.out.println((i + 1) + &quot;. &quot; + estrategias[i].nombre());
+            System.out.println(&quot;5. Agregar producto\n6. Ver carrito\n0. Salir&quot;);
+            System.out.print(&quot;Opcion: &quot;);
+            op = leerInt(sc);
+            if (op &gt;= 1 &amp;&amp; op &lt;= 4) {
+                calc.setEstrategia(estrategias[op - 1]);   // se cambia la estrategia en tiempo de ejecucion
+                System.out.printf(&quot;%s -&gt; Total: S/ %.2f (sin descuento: S/ %.2f)%n&quot;,
+                        estrategias[op - 1].nombre(), calc.calcularTotal(carrito), CalculadoraDePrecios.suma(carrito));
+            } else if (op == 5) {
+                try {
+                    System.out.print(&quot;Nombre: &quot;); String n = sc.nextLine();
+                    System.out.print(&quot;Precio: &quot;); double p = Double.parseDouble(sc.nextLine().trim());
+                    carrito.add(new Producto(n, p));
+                } catch (NumberFormatException e) { System.out.println(&quot;Precio invalido.&quot;); }
+            } else if (op == 6) {
+                carrito.forEach(System.out::println);
+            }
+        } while (op != 0);
+    }
+}</pre>
+<p><b>Salida del programa:</b></p>
+<pre class="out">===== MENU DE DESCUENTOS =====
+1. Sin descuento
+2. Descuento fijo (10%)
+3. Descuento porcentual (30% en 2 productos iguales)
+4. Descuento acumulado (3+ productos: 50% al mas barato)
+5. Agregar producto
+6. Ver carrito
+0. Salir
+Opcion: 1..4 (se prueba cada estrategia)
+Sin descuento -&gt; Total: S/ 300.00 (sin descuento: S/ 300.00)
+Descuento fijo (10%) -&gt; Total: S/ 270.00 (sin descuento: S/ 300.00)
+Descuento porcentual (30% en 2 productos iguales) -&gt; Total: S/ 270.00 (sin descuento: S/ 300.00)
+Descuento acumulado (3+ productos: 50% al mas barato) -&gt; Total: S/ 275.00 (sin descuento: S/ 300.00)
+Descuento acumulado (3+ productos: 50% al mas barato) -&gt; Total: S/ 310.00 (sin descuento: S/ 320.00)
+
+(Se agrega el producto Cable - S/ 20 con la opcion 5 y se vuelve a calcular)</pre>
+<p><b>Explicación:</b> el menú asigna la estrategia con <code>setEstrategia</code> en tiempo de ejecución y la calculadora delega el cálculo, sin <code>if-else</code>. Con el carrito de ejemplo (Mouse 50, Mouse 50, Teclado 120, Audífonos 80 = S/ 300): fijo = 270; porcentual = 35+35+120+80 = 270; acumulado = 300 − 25 = 275. <i>Supuestos:</i> el 10% fijo se aplica al total, y el 30% a los productos cuyo nombre se repite al menos dos veces.</p>
+</div><div class="blk">
+<h3 class="t">EJERCICIO 3: Control remoto de un televisor (Command)</h3>
+<p><b>Enunciado:</b> control remoto con cinco funcionalidades: encender/apagar, subir volumen, bajar volumen, canal siguiente y canal anterior (se agregó además "deshacer").</p>
+<table class="i"><tr><th>Rol del patrón</th><th>Clase / interfaz</th></tr><tr><td>Command</td><td><code>Comando</code> (<code>ejecutar</code>, <code>deshacer</code>)</td></tr><tr><td>Comandos concretos</td><td><code>Energia</code>, <code>Volumen</code> (+5 / −5), <code>Canal</code> (+1 / −1)</td></tr><tr><td>Receiver</td><td><code>Televisor</code></td></tr><tr><td>Invoker</td><td><code>ControlRemoto</code> (botones y historial)</td></tr></table>
+<p><b>Código</b> (<code>src/ej3_command/Main.java</code>):</p>
+<pre>package ej3_command;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+
+// Command
+interface Comando { void ejecutar(); void deshacer(); }
+
+// Receiver
+class Televisor {
+    private boolean encendido = false;
+    private int volumen = 10, canal = 1;
+    void alternarEnergia() { encendido = !encendido; System.out.println(&quot;TV &quot; + (encendido ? &quot;ENCENDIDO&quot; : &quot;APAGADO&quot;)); }
+    boolean cambiarVolumen(int d) {
+        if (!estaOn()) return false;
+        volumen = Math.max(0, Math.min(100, volumen + d));
+        System.out.println(&quot;Volumen: &quot; + volumen); return true;
+    }
+    boolean cambiarCanal(int d) {
+        if (!estaOn()) return false;
+        canal = Math.max(1, canal + d);
+        System.out.println(&quot;Canal: &quot; + canal); return true;
+    }
+    private boolean estaOn() { if (!encendido) System.out.println(&quot;(El TV esta apagado)&quot;); return encendido; }
+}
+
+// Concrete Commands
+class Energia implements Comando {
+    private final Televisor tv;
+    Energia(Televisor tv) { this.tv = tv; }
+    public void ejecutar() { tv.alternarEnergia(); }
+    public void deshacer() { tv.alternarEnergia(); }
+}
+
+class Volumen implements Comando {
+    private final Televisor tv; private final int delta; private boolean aplicado;
+    Volumen(Televisor tv, int delta) { this.tv = tv; this.delta = delta; }
+    public void ejecutar() { aplicado = tv.cambiarVolumen(delta); }
+    public void deshacer() { if (aplicado) tv.cambiarVolumen(-delta); }
+}
+
+class Canal implements Comando {
+    private final Televisor tv; private final int delta; private boolean aplicado;
+    Canal(Televisor tv, int delta) { this.tv = tv; this.delta = delta; }
+    public void ejecutar() { aplicado = tv.cambiarCanal(delta); }
+    public void deshacer() { if (aplicado) tv.cambiarCanal(-delta); }
+}
+
+// Invoker
+class ControlRemoto {
+    private final String[] etiquetas = new String[5];
+    private final Comando[] botones = new Comando[5];
+    private final Deque&lt;Comando&gt; historial = new ArrayDeque&lt;&gt;();
+    void asignar(int i, String etiqueta, Comando c) { etiquetas[i] = etiqueta; botones[i] = c; }
+    void presionar(int i) {
+        System.out.println(&quot;[Boton &quot; + etiquetas[i] + &quot;]&quot;);
+        botones[i].ejecutar();
+        historial.push(botones[i]);
+    }
+    void deshacer() {
+        if (historial.isEmpty()) { System.out.println(&quot;Nada que deshacer&quot;); return; }
+        System.out.println(&quot;[Deshacer]&quot;);
+        historial.pop().deshacer();
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Televisor tv = new Televisor();
+        ControlRemoto control = new ControlRemoto();
+        control.asignar(0, &quot;ENCENDER/APAGAR&quot;, new Energia(tv));
+        control.asignar(1, &quot;VOLUMEN +&quot;, new Volumen(tv, +5));
+        control.asignar(2, &quot;VOLUMEN -&quot;, new Volumen(tv, -5));
+        control.asignar(3, &quot;CANAL +&quot;, new Canal(tv, +1));
+        control.asignar(4, &quot;CANAL -&quot;, new Canal(tv, -1));
+
+        control.presionar(1);   // con el TV apagado no hace nada
+        control.presionar(0);
+        control.presionar(1);
+        control.presionar(1);
+        control.presionar(2);
+        control.presionar(3);
+        control.presionar(3);
+        control.presionar(4);
+        control.deshacer();
+        control.deshacer();
+        control.presionar(0);
+    }
+}</pre>
+<p><b>Salida del programa:</b></p>
+<pre class="out">[Boton VOLUMEN +]
+(El TV esta apagado)
+[Boton ENCENDER/APAGAR]
+TV ENCENDIDO
+[Boton VOLUMEN +]
+Volumen: 15
+[Boton VOLUMEN +]
+Volumen: 20
+[Boton VOLUMEN -]
+Volumen: 15
+[Boton CANAL +]
+Canal: 2
+[Boton CANAL +]
+Canal: 3
+[Boton CANAL -]
+Canal: 2
+[Deshacer]
+Canal: 3
+[Deshacer]
+Canal: 2
+[Boton ENCENDER/APAGAR]
+TV APAGADO</pre>
+<p><b>Explicación:</b> cada botón del control tiene un comando asignado; el control solo llama a <code>ejecutar()</code> sin saber cómo se hace la acción. Los comandos ejecutados se guardan en una pila (<code>Deque</code>), y <code>deshacer()</code> saca el último y revierte su efecto. Con el TV apagado los comandos no tienen efecto.</p>
+</div><div class="blk">
+<h3 class="t">EJERCICIO 4: Tienda en línea (Observer + Strategy + Command)</h3>
+<p><b>Enunciado:</b> aplicación adicional que combina los tres patrones: las acciones de la tienda son comandos en una cola, el precio se calcula con estrategias intercambiables y los clientes suscritos reciben notificaciones.</p>
+<table class="i"><tr><th>Rol del patrón</th><th>Clase / interfaz</th></tr><tr><td>Observer</td><td><code>Observador</code>, <code>Cliente</code> (observador) y <code>Tienda</code> (sujeto)</td></tr><tr><td>Strategy</td><td><code>EstrategiaPrecio</code>, <code>SinDescuento</code>, <code>DescuentoPorcentual</code>, contexto <code>Carrito</code></td></tr><tr><td>Command</td><td><code>Comando</code>, <code>AgregarProducto</code>, <code>CambiarPromocion</code>, <code>FinalizarCompra</code>, invoker <code>ProcesadorComandos</code></td></tr></table>
+<p><b>Código</b> (<code>src/ej4_combinado/Main.java</code>):</p>
+<pre>package ej4_combinado;
+
+import java.util.*;
+
+// ===== OBSERVER: los clientes reciben avisos de la tienda =====
+interface Observador { void actualizar(String mensaje); }
+
+class Cliente implements Observador {
+    private final String nombre;
+    Cliente(String nombre) { this.nombre = nombre; }
+    public void actualizar(String mensaje) { System.out.println(&quot;   [&quot; + nombre + &quot;] &quot; + mensaje); }
+}
+
+class Tienda {
+    private final List&lt;Observador&gt; clientes = new ArrayList&lt;&gt;();
+    void suscribir(Observador o) { clientes.add(o); }
+    void desuscribir(Observador o) { clientes.remove(o); }
+    void notificar(String mensaje) {
+        System.out.println(&quot;Tienda notifica: &quot; + mensaje);
+        for (Observador o : clientes) o.actualizar(mensaje);
+    }
+}
+
+// ===== STRATEGY: formas de calcular el precio =====
+record Producto(String nombre, double precio) {}
+
+interface EstrategiaPrecio { double aplicar(double subtotal); String nombre(); }
+
+class SinDescuento implements EstrategiaPrecio {
+    public double aplicar(double s) { return s; }
+    public String nombre() { return &quot;Sin descuento&quot;; }
+}
+
+class DescuentoPorcentual implements EstrategiaPrecio {
+    private final double pct;
+    DescuentoPorcentual(double pct) { this.pct = pct; }
+    public double aplicar(double s) { return s * (1 - pct / 100); }
+    public String nombre() { return &quot;Descuento &quot; + (int) pct + &quot;%&quot;; }
+}
+
+class Carrito {   // contexto de Strategy
+    private final List&lt;Producto&gt; items = new ArrayList&lt;&gt;();
+    private EstrategiaPrecio estrategia = new SinDescuento();
+    void agregar(Producto p) { items.add(p); System.out.println(&quot;Agregado al carrito: &quot; + p.nombre()); }
+    void setEstrategia(EstrategiaPrecio e) { this.estrategia = e; }
+    double total() { return estrategia.aplicar(items.stream().mapToDouble(Producto::precio).sum()); }
+}
+
+// ===== COMMAND: acciones de la tienda como objetos =====
+interface Comando { void ejecutar(); }
+
+class AgregarProducto implements Comando {
+    private final Carrito carrito; private final Producto producto;
+    AgregarProducto(Carrito c, Producto p) { carrito = c; producto = p; }
+    public void ejecutar() { carrito.agregar(producto); }
+}
+
+class CambiarPromocion implements Comando {
+    private final Carrito carrito; private final Tienda tienda; private final EstrategiaPrecio estrategia;
+    CambiarPromocion(Carrito c, Tienda t, EstrategiaPrecio e) { carrito = c; tienda = t; estrategia = e; }
+    public void ejecutar() {
+        carrito.setEstrategia(estrategia);                                    // Strategy
+        tienda.notificar(&quot;Nueva promocion activa: &quot; + estrategia.nombre());   // Observer
+    }
+}
+
+class FinalizarCompra implements Comando {
+    private final Carrito carrito; private final Tienda tienda;
+    FinalizarCompra(Carrito c, Tienda t) { carrito = c; tienda = t; }
+    public void ejecutar() {
+        System.out.printf(&quot;Compra finalizada. Total a pagar: S/ %.2f%n&quot;, carrito.total());
+        tienda.notificar(&quot;Se registro una compra en la tienda&quot;);
+    }
+}
+
+class ProcesadorComandos {   // invoker con cola de comandos
+    private final Queue&lt;Comando&gt; cola = new LinkedList&lt;&gt;();
+    void encolar(Comando c) { cola.add(c); }
+    void procesar() { while (!cola.isEmpty()) cola.poll().ejecutar(); }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Tienda tienda = new Tienda();
+        Cliente ana = new Cliente(&quot;Ana&quot;), luis = new Cliente(&quot;Luis&quot;);
+        tienda.suscribir(ana); tienda.suscribir(luis);
+
+        Carrito carrito = new Carrito();
+        ProcesadorComandos proc = new ProcesadorComandos();
+        proc.encolar(new AgregarProducto(carrito, new Producto(&quot;Laptop&quot;, 2500)));
+        proc.encolar(new AgregarProducto(carrito, new Producto(&quot;Mouse&quot;, 50)));
+        proc.encolar(new CambiarPromocion(carrito, tienda, new DescuentoPorcentual(10)));
+        proc.encolar(new FinalizarCompra(carrito, tienda));
+        proc.procesar();
+
+        System.out.println(&quot;\n--- Luis se desuscribe ---&quot;);
+        tienda.desuscribir(luis);
+        proc.encolar(new CambiarPromocion(carrito, tienda, new DescuentoPorcentual(20)));
+        proc.encolar(new FinalizarCompra(carrito, tienda));
+        proc.procesar();
+    }
+}</pre>
+<p><b>Salida del programa:</b></p>
+<pre class="out">Agregado al carrito: Laptop
+Agregado al carrito: Mouse
+Tienda notifica: Nueva promocion activa: Descuento 10%
+   [Ana] Nueva promocion activa: Descuento 10%
+   [Luis] Nueva promocion activa: Descuento 10%
+Compra finalizada. Total a pagar: S/ 2295.00
+Tienda notifica: Se registro una compra en la tienda
+   [Ana] Se registro una compra en la tienda
+   [Luis] Se registro una compra en la tienda
+
+--- Luis se desuscribe ---
+Tienda notifica: Nueva promocion activa: Descuento 20%
+   [Ana] Nueva promocion activa: Descuento 20%
+Compra finalizada. Total a pagar: S/ 2040.00
+Tienda notifica: Se registro una compra en la tienda
+   [Ana] Se registro una compra en la tienda</pre>
+<p><b>Explicación:</b> <code>CambiarPromocion</code> es un Command que cambia la estrategia del carrito (Strategy) y avisa a los clientes (Observer). <code>FinalizarCompra</code> calcula el total con la estrategia activa y notifica. Cuando Luis se desuscribe ya no recibe avisos, y el total cambia de S/ 2295 (10%) a S/ 2040 (20%) sobre S/ 2550.</p>
+</div>
+<div class="blk"><h3 class="t">CUESTIONARIO</h3><p><b>1. ¿Cuál es la ventaja principal de usar el patrón Observer en sistemas con múltiples dependencias?</b></p><ul><li>Desacopla al sujeto de sus observadores: el sujeto solo conoce la interfaz <code>Observador</code>, no las clases concretas (Gamma et al., 1994).</li><li>Cuando cambia su estado notifica automáticamente a todos los dependientes, y estos se pueden agregar o quitar en tiempo de ejecución.</li></ul><p><b>2. ¿Qué problema resuelve el patrón Strategy en comparación con el uso de condicionales como if-else?</b></p><ul><li>Evita bloques largos de <code>if-else</code>/<code>switch</code> que hay que modificar cada vez que aparece un algoritmo nuevo.</li><li>Cada algoritmo vive en su clase, y se agregan nuevos sin tocar el código existente (principio abierto/cerrado) (Gamma et al., 1994).</li></ul><p><b>3. Explica cómo el patrón Command ayuda a desacoplar la lógica de ejecución de las operaciones.</b></p><ul><li>Convierte la solicitud en un objeto: el invocador solo llama a <code>ejecutar()</code> y no conoce al receptor ni cómo se realiza la acción.</li><li>Como el comando es un objeto, se puede guardar, encolar, registrar o deshacer.</li></ul><p><b>4. ¿Qué métodos claves se deben implementar para crear un patrón Observer funcional en Java?</b></p><ul><li>En el observador: <code>actualizar(...)</code> (update), declarado en la interfaz.</li><li>En el sujeto: <code>suscribir</code> (attach), <code>desuscribir</code> (detach) y <code>notificar</code> (notifyObservers), con una lista de observadores.</li></ul><p><b>5. En el patrón Strategy, ¿cómo se puede cambiar dinámicamente la estrategia utilizada?</b></p><ul><li>El contexto guarda una referencia a la interfaz de la estrategia y ofrece un método <code>setEstrategia(...)</code>.</li><li>En ejecución se asigna otra implementación; en el Ejercicio 2, el menú cambia la estrategia según la opción elegida.</li></ul><p><b>6. Menciona tres casos de uso donde el patrón Command sería especialmente útil.</b></p><ul><li>Interfaces gráficas: botones y menús vinculados a comandos (ej. "Guardar").</li><li>Deshacer/rehacer en editores o aplicaciones.</li><li>Colas de tareas, como trabajos de impresión, o automatización de pasos y macros (Horstmann, 2009).</li></ul><p><b>7. ¿Cómo puedes combinar los patrones Observer, Strategy y Command en una aplicación más compleja?</b></p><ul><li>Como en el Ejercicio 4: Command encapsula las acciones (agregar, cambiar promoción, comprar); Strategy define cómo se calcula el precio; Observer avisa a los clientes de los cambios.</li><li>Un mismo comando puede usar a los otros dos: <code>CambiarPromocion</code> cambia la estrategia y notifica a los observadores.</li></ul><p><b>8. ¿Qué ventajas tiene encapsular algoritmos o acciones en clases independientes desde el punto de vista del diseño de software?</b></p><ul><li>Menor acoplamiento y mayor cohesión: cada clase tiene una sola tarea.</li><li>Se pueden reutilizar, probar por separado y extender sin modificar el código existente; los cambios quedan localizados.</li></ul><p><b>9. En el patrón Command, ¿cómo se implementaría la funcionalidad de "deshacer"?</b></p><ul><li>Se agrega un método <code>deshacer()</code> a la interfaz <code>Comando</code> que revierte el efecto de <code>ejecutar()</code>.</li><li>El invocador guarda los comandos ejecutados en una pila (historial) y al deshacer saca el último y llama a su <code>deshacer()</code>, como en el Ejercicio 3. Si hace falta, el comando guarda el estado previo (se puede complementar con Memento).</li></ul><p><b>10. Reflexiona sobre cómo los patrones de diseño promueven el principio de responsabilidad única.</b></p><ul><li>Observer separa "quién cambia" de "quién reacciona"; Strategy aísla cada algoritmo; Command separa quien pide la acción de quien la ejecuta.</li><li>Así cada clase tiene una única razón para cambiar, lo que facilita entenderla, probarla y mantenerla.</li></ul></div>
+<div class="blk"><h3 class="t">CONCLUSIONES</h3><ul>
+<li>Observer permite notificar a muchos objetos sin acoplarlos al sujeto; Strategy intercambia algoritmos sin condicionales; Command convierte acciones en objetos que se pueden encolar y deshacer.</li>
+<li>Los tres patrones reducen el acoplamiento y se pueden combinar, como en la tienda en línea del Ejercicio 4.</li></ul></div>
+<div class="blk"><h3 class="t">REFERENCIAS</h3><ul>
+<li>Gamma, E., Helm, R., Johnson, R. &amp; Vlissides, J. (1994). <i>Design Patterns: Elements of Reusable Object-Oriented Software</i>. Addison-Wesley.</li>
+<li>Horstmann, C. (2009). <i>Big Java</i>. Pearson.</li></ul></div>
+<footer>Lenguajes de Programación III · Sesión N° 11 · Página 1 de 1</footer></body></html>
